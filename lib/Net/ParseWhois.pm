@@ -8,7 +8,7 @@ use Carp;
 use vars qw($VERSION @ISA @EXPORT @EXPORT_OK);
 use Net::ParseWhois::Domain;
 
-$VERSION = '0.60';
+$VERSION = '0.62';
 
 require Exporter;
 
@@ -185,9 +185,6 @@ Net::ParseWhois - An extendable alternative to Net::Whois for parsing whois info
 
 =head1 DESCRIPTION
 
-Disclaimer: this is my first CPAN module. Feedback, bugfixes, general comments, etc will be greatly
-appreciated.
-
 Net::ParseWhois currently only supports domains from major TLDs and Registrars (.com, .net & .org --
 see REGISTRARS for an exact list of who's supported) and tries to maintain backward interface
 compatability with Net::Whois.
@@ -222,6 +219,9 @@ Currently supported:
 	whois.bulkregister.com - Bulkregister.com, Inc.
 	rs.domainbank.net - Domain Bank, Inc.
 	whois.registrars.com - INTERNET DOMAIN REGISTRARS (Shopnow?)
+    whois.corenic.net - Core Internet Council of Registrars
+    whois.InternetNamesWW.com -  Melbourne IT, aka Internet Names Worldwide
+	whois.easyspace.com - Easyspace, Ltd.
 
 Not supported (with notes..):
 
@@ -236,8 +236,6 @@ Not supported (with notes..):
 	whois.yesnic.com - Korean based registrar, field's are labeled. would require work.
 	whois.gandi.net - French, RIPE style whois.
 	whois.dotearth.com - might be ugly. no newlines between different sections
-	whois.InternetNamesWW.com - yuck.
-	whois.corenic.net - lots of wierd fields, little conformity
 	whois.names4ever.com - no data?? down?
 
 	Known registrars that I haven't looked at --
@@ -246,7 +244,6 @@ Not supported (with notes..):
 	whois.registrars.com
 	whois.gandi.net
 	whois.doregi.com
-	whois.easyspace.com
 	whois.dotregistrar.com
 	whois.ibi.net
 	whois.OnlineNIC.com
@@ -275,8 +272,8 @@ Not supported (with notes..):
 	whois.eastcom.com
 	whois.domainzoo.com
 
-Note: if corenic were supported, I'd bet that Net::ParseWhois's supported registrars would cover
-upwards of 90% of the registrations that are out there.
+Note: Now that CoreNic is supported (thanks Vern!), Net::ParseWhois's supported registrars
+should cover upwards of 90% of the GTLD registrations that are out there.
 
 =head1 COMMON METHODS (Specific to Net::ParseWhois)
 
@@ -287,6 +284,15 @@ upwards of 90% of the registrations that are out there.
  todo
 
 =head1 SEE ALSO
+
+The Net::ParseWhois project homepage:
+
+    http://dajoba.com/projects/netparsewhois/
+
+The Net::ParseWhois mailing list:
+
+    netparsewhois at lists dot dajoba dot com
+    http://lists.dajoba.com/m/listinfo/netparsewhois/
 
 L<Net::Whois>, L<Net::Whois::Raw>, L<Net::RWhois>
 
@@ -302,8 +308,11 @@ Thanks to:
 
 Joseph Ingersoll for testing under ActivePerl.
 Curtis Poe for comments and bug testing.
-Simon Flack for registrars.com parsing module & bug sleuthing.
+Andy Baio for first version of Registrars.pm.
+Simon Flack for newer registrars.com parsing module & bug sleuthing.
 Douglas Freake for (yet to be used) address parsing contribution.
+Vern Hart for (especially tough) CoreNic.pm parsing module.
+Adam Stubbs for INameWW.pm and Easyspace.pm parsing modules.
 
 =head1 COPYRIGHT
 

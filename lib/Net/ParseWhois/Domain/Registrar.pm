@@ -2,7 +2,7 @@ package Net::ParseWhois::Domain::Registrar;
 require 5.004;
 use strict;
 
-$Net::ParseWhois::Domain::Registrar::VERSION = 0.01;
+$Net::ParseWhois::Domain::Registrar::VERSION = 0.1;
 @Net::ParseWhois::Domain::Registrar::ISA = qw(Net::ParseWhois::Domain);
 
 sub my_data {} # used by new to import vals into $self->{} in specific registrar classes
@@ -41,6 +41,18 @@ sub registrar_data {
 			'registrar_tag'	=>	'INTERNET DOMAIN REGISTRARS',
 			'referral_tag'	=>	'www.registrars.com',
 			'class'			=>	'Registrars' },
+    'whois.corenic.net'     => {
+            'registrar_tag' => 'CORE INTERNET COUNCIL OF REGISTRARS',
+            'referral_tag'  => 'www.corenic.net',
+            'class'         => 'CoreNic' },
+    'whois.InternetNamesWW.com' => {
+            'registrar_tag' => 'MELBOURNE IT, LTD. D/B/A INTERNET NAMES WORLDWIDE',
+            'referral_tag'  => 'www.InternetNamesWW.com',
+            'class'         => 'INameWW' },
+    'whois.easyspace.com'   => {
+            'registrar_tag' => 'EASYSPACE LTD',
+            'referral_tag'  => 'www.easyspace.com',
+            'class'         => 'Easyspace' },
 	'unknown_registrar'		=> {
 			'registrar_tag'	=>	'Unknown',
 			'referral_tag'	=>	'n/a',

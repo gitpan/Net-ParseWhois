@@ -13,6 +13,9 @@ lib/Net/ParseWhois/Domain/Registrar/BulkRegister.pm
 lib/Net/ParseWhois/Domain/Registrar/DomainBank.pm
 lib/Net/ParseWhois/Domain/Registrar/DomainDiscover.pm
 lib/Net/ParseWhois/Domain/Registrar/Registrars.pm
+lib/Net/ParseWhois/Domain/Registrar/CoreNic.pm
+lib/Net/ParseWhois/Domain/Registrar/Easyspace.pm
+lib/Net/ParseWhois/Domain/Registrar/INameWW.pm
 lib/Net/ParseWhois/Domain/Registrar/Unknown.pm
 t/01-base.t
 t/whois.pl
