@@ -1,0 +1,8 @@
+Revision history for Perl extension Net::ParseWhois
+
+0.60  Tue Mar 27 15:06:39 PST 2001
+	- initial CPAN release
+
+0.01  Sun Oct 29 18:58:28 2000
+	- original version; created by h2xs 1.19
+
