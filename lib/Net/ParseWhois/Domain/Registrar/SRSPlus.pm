@@ -1,23 +1,29 @@
-package Net::ParseWhois::Domain::Registrar::Netsol;
+# Program: Net::ParseWhois::Domain::Registrar class for SRSPlus
+# Version: 1.0
+# Purpose: Provides parsing methods and configurations for the SRSPlus
+#          registrar (a division of Network Solutions)
+# Written: 11/21/05 by Jeff Mercer <riffer@vaxer.net>
+
+package Net::ParseWhois::Domain::Registrar::SRSPlus;
 
 require 5.004;
 use strict;
 
-@Net::ParseWhois::Domain::Registrar::Netsol::ISA = qw(Net::ParseWhois::Domain::Registrar);
-$Net::ParseWhois::Domain::Registrar::Netsol::VERSION = 0.6;
+@Net::ParseWhois::Domain::Registrar::SRSPlus::ISA = qw(Net::ParseWhois::Domain::Registrar);
+$Net::ParseWhois::Domain::Registrar::SRSPlus::VERSION = 1.0;
 
 sub rdebug		{ 0 }
 sub regex_org_start	{ '^Registrant:'}
 sub regex_no_match	{ '^No match for' }
 sub regex_created	{ '^Record created on (.*)\.$' }
 sub regex_expires	{ '^Record expires on (.*)\.$' }
-# NetSol no longer gives last updated date for individual domains
+# NetSol/SRSPLus no longer gives last updated date for individual domains
 sub regex_updated	{ '^Record last updated on (.*)\.$' }
 sub regex_domain	{ '^Domain Name: (.*)$' }
-sub regex_nameservers	{ '^Domain servers in listed order:$' }
-# Billing contacts no longer given via WHOIS
-sub my_contacts		{ [ qw(Administrative Technical) ] }
-sub my_data		{ [ qw(my_contacts regex_org_start regex_no_match regex_created regex_updated regex_expires regex_domain regex_nameservers) ] }
+sub regex_nameservers	{ '^Domain servers:$' }
+sub my_nameservers_noips	{ 1 }
+sub my_contacts		{ [ qw(Admin Technical Billing) ] }
+sub my_data		{ [ qw(my_nameservers_noips my_contacts regex_org_start regex_no_match regex_created regex_updated regex_expires regex_domain regex_nameservers) ] }
 
 sub parse_text {
 	my $self = shift;
@@ -29,7 +35,6 @@ sub parse_text {
 	$self->{RECORD_UPDATED}="n/a";
 
 	$self->dump_text($text) if $self->rdebug;
-
 	$self->parse_start($text);
 	$self->dump_text($text) if $self->rdebug;
 	$self->parse_org($text);

@@ -8,7 +8,7 @@ use Carp;
 use vars qw($VERSION @ISA @EXPORT @EXPORT_OK);
 use Net::ParseWhois::Domain;
 
-$VERSION = '0.62';
+$VERSION = '0.7';
 
 require Exporter;
 
@@ -22,28 +22,50 @@ sub debug {
     return $self->{'debug'} || 0;
 }
 
+# Mapping of whois servers to Top-Level domains. Originally quite sparse, 
+# these all pointed to whois.nsiregistry.com. --jcm
 sub TLDs {
 	{
-	COM => 'whois.nsiregistry.com', 
-	NET => 'whois.nsiregistry.com', 
-	ORG => 'whois.nsiregistry.com'
+		COM => 'whois.internic.net',
+		NET => 'whois.internic.net',
+		ORG => 'whois.publicinterestregistry.net',
+		EDU => 'whois.educause.net',
+		GOV => 'whois.nic.gov',
+		MIL => 'whois.nic.mil'
 	}
 }
+
+
+# Mapping of TLDs to their WHOIS model. Basically, this will let us know 
+# if there's any referrals to bother to chase. Generally, we're only going
+# to chase referrals for .com and .net domains.		--jcm, 11/10/05
+sub TLDModel {
+	{
+		COM => 'thin',
+		NET => 'thin',
+		ORG => 'thick',
+		EDU => 'thick',
+		GOV => 'thick',
+		MIL => 'thick'
+	}
+}
+
 
 sub _connect {
 	my $self = shift;
 
 	unless ($self->{'base_server_addr'}) {
-		my $a = gethostbyname $self->{'base_server'};
+		my $a = gethostbyname $self->{'base_server_name'};
 		$self->{'base_server_addr'} = inet_ntoa($a) if $a;
 	}
 
 	$self->{'base_server_addr'} or croak 'Net::ParseWhois:: no server';
 
 	warn "connecting to $self->{'base_server_addr'} 43\n" if $self->debug;
+
 	my $sock = IO::Socket::INET->new(PeerAddr => $self->{'base_server_addr'},
-						 			PeerPort => 'whois',
-									Proto => 'tcp')
+						 		PeerPort => 'whois',
+								Proto => 'tcp')
 		or croak "Net::ParseWhois: Can't connect to $self->{'base_server_name'}: $@";
 	$sock->autoflush;
 	return $sock;
@@ -51,8 +73,8 @@ sub _connect {
 
 sub _load_module {
 	my ($self, $module) = @_;
-    eval "use $module";
-    die "failed to load $module\n" if $@;
+	eval "use $module";
+	die "failed to load $module\n" if $@;
 }
 
 sub _send_to_sock {
@@ -71,7 +93,7 @@ sub _send_to_sock {
 		local $/; $sock_text = <$sock>;
 	}
 	undef $sock;
-	$sock_text || die "No data returned from $self->{'base_server'}\n";
+	$sock_text || die "No data returned from $self->{'base_server_name'}\n";
 	$sock_text =~ s/^ +//gm;
 	my @text = split / *\x0d?\x0a/, $sock_text;
 	for (@text) { s/^ +//} # get rid of leading whitespace
@@ -185,26 +207,31 @@ Net::ParseWhois - An extendable alternative to Net::Whois for parsing whois info
 
 =head1 DESCRIPTION
 
-Net::ParseWhois currently only supports domains from major TLDs and Registrars (.com, .net & .org --
-see REGISTRARS for an exact list of who's supported) and tries to maintain backward interface
+Net::ParseWhois currently only supports domains from major TLDs and 
+Registrars (.com, .net & .org -- see REGISTRARS for an exact list of who's 
+supported) and tries to maintain backward interface
 compatability with Net::Whois.
 
-Net::ParseWhois is my attempt at updating Net::Whois to support whois referrals. The author
-of Net::Whois (Dana Hudes) and I disgreed on how to solve the problem of parsing a distrubuted and 
-non-standardized whois system, so I created this divergent module. (It's my understanding that
-Mr. Hudes wants to create an IETF draft and assumes registrars/registries will then follow it.
-I've simply taken the current not-so-defined situation and coded around it.) 
+Net::ParseWhois is my attempt at updating Net::Whois to support whois 
+referrals. The author of Net::Whois (Dana Hudes) and I disgreed on how to 
+solve the problem of parsing a distrubuted and non-standardized whois 
+system, so I created this divergent module. (It's my understanding that 
+Mr. Hudes wants to create an IETF draft and assumes registrars/registries 
+will then follow it. I've simply taken the current not-so-defined 
+situation and coded around it.) 
 
-Net::ParseWhois contains a generalized parsing system that can be configured for each Registrar,
-or completely overridden as needed. 
+Net::ParseWhois contains a generalized parsing system that can be 
+configured for each Registrar, or completely overridden as needed. 
 
-The class C<Net::ParseWhois::Domain::Registrar> contains a list of known servers that could be 
-returned in a whois referral, and specifies the specific class to use for each. When 
-C<Net::ParseWhois> receives a referral from the 'root' whois server, it creates the specified 
-object and calls follow_referral on that object. If a domain is found and a referral given, but no 
-Registrar class has been defined to handle that referral, the method I<ok> will return true
-but method 'unknown_registrar' will also return true. Net::ParseWhois will still follow
-the referral, and the raw output from the registrar will be available via the method
+The class C<Net::ParseWhois::Domain::Registrar> contains a list of known 
+servers that could be returned in a whois referral, and specifies the 
+specific class to use for each. When C<Net::ParseWhois> receives a 
+referral from the 'root' whois server, it creates the specified object 
+and calls follow_referral on that object. If a domain is found and a 
+referral given, but no Registrar class has been defined to handle that 
+referral, the method I<ok> will return true but method 'unknown_registrar' 
+will also return true. Net::ParseWhois will still follow the referral, and 
+the raw output from the registrar will be available via the method 
 'raw_whois_text'.
 
 =head1 REGISTRARS
@@ -219,8 +246,8 @@ Currently supported:
 	whois.bulkregister.com - Bulkregister.com, Inc.
 	rs.domainbank.net - Domain Bank, Inc.
 	whois.registrars.com - INTERNET DOMAIN REGISTRARS (Shopnow?)
-    whois.corenic.net - Core Internet Council of Registrars
-    whois.InternetNamesWW.com -  Melbourne IT, aka Internet Names Worldwide
+	whois.corenic.net - Core Internet Council of Registrars
+	whois.InternetNamesWW.com -  Melbourne IT, aka Internet Names Worldwide
 	whois.easyspace.com - Easyspace, Ltd.
 
 Not supported (with notes..):
@@ -272,12 +299,81 @@ Not supported (with notes..):
 	whois.eastcom.com
 	whois.domainzoo.com
 
-Note: Now that CoreNic is supported (thanks Vern!), Net::ParseWhois's supported registrars
-should cover upwards of 90% of the GTLD registrations that are out there.
+Note: Now that CoreNic is supported (thanks Vern!), Net::ParseWhois's 
+supported registrars should cover upwards of 90% of the GTLD registrations 
+that are out there.
 
 =head1 COMMON METHODS (Specific to Net::ParseWhois)
 
- todo
+I<new("a-domain-name-goes-here")>
+  Creates a new instance of a Net::ParseWhois object, which attempts a 
+lookup of the specified domain name.
+
+I<ok>
+  Returns a boolean value indicating whether the Net::ParseWhois object is
+"safe" or not. If it returns false, then a match was not found or some 
+other error occurred when creating the object. A value of true indicates a
+match was found and the various methods for returning Registrar data 
+should function.
+  Coders should always check this method first after creating a new 
+Net::ParseWhois object to avoid script failures.
+
+I<error>
+  Returns the error message indicating why the Whois lookup could not be
+completed. Will return null if there is no error.
+
+  print "Tag: ", $w->tag, "\n";
+  print "Country: ", $w->country, "\n";
+  print "Name Servers:\n", map { "    $$_[0] ($$_[1])\n" }  @{$w->servers};
+  if ($c = $w->contacts) {
+    print "Contacts:\n";
+    for $t (sort keys %$c) {
+      print "    $t:\n";
+      print map { "\t$_\n" } @{$$c{$t}};
+
+The following methods apply only to when a succesful WHOIS lookup was 
+performed.
+
+I<domain>
+  Returns the domain name the Net::ParseWhois object looked up.
+
+I<registrar>
+  Returns the name of the registrar of the domain
+
+I<record_created>
+  Returns the date and time the domain's entry was put into this 
+registrar's system. Note that this does not necessarily reflect the 
+original registration date of the domain!
+
+I<record_updated>
+  Returns the date and time the domain's entry was last updated. Updates 
+include changes to contact info, registered name servers, etc.
+
+I<name>
+  Returns the name of the entity that registerted the domain. Typically 
+this will be the name of either a person or a company, but pretty much 
+depends on what was used in the initial registration process.
+
+I<address>
+  Returns an array of strings representing the physical address registered 
+for the domain. This will be the domain owner's address, not that of a 
+technical or administrative contact.
+
+I<>
+
+
+I<>
+
+
+I<>
+
+
+I<>
+
+
+I<>
+
+
 
 =head1 GENERIC METHODS (From Net::Whois)
 

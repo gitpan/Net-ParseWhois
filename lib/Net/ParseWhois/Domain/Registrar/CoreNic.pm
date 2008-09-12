@@ -1,31 +1,40 @@
+# Updated: 11/30/05 by Jeff Mercer <riffer@vaxer.net>
+# Note: Only tested against corenic.net domain name, so the address 
+#       parsing has not been fully tested. May need tweaking.	--jcm, 11/30/05
+
 package Net::ParseWhois::Domain::Registrar::CoreNic;
 
 require 5.004;
 use strict;
 
 @Net::ParseWhois::Domain::Registrar::CoreNic::ISA = qw(Net::ParseWhois::Domain::Registrar);
-$Net::ParseWhois::Domain::Registrar::CoreNic::VERSION = 0.1;
+$Net::ParseWhois::Domain::Registrar::CoreNic::VERSION = 0.2;
 
-sub rdebug { 0 }
-sub regex_no_match { '^No match for' }
-sub regex_domain { '^domain:\s*(.*)$' }
-sub regex_org { '^o[wr][ng][ea][rn]i?z?a?t?i?o?n?:\s*(.*)$' }
-sub regex_tag { '^origin-c:\s*(.*)$' }
-sub regex_address { '^address:\s*(.*)$' }
-sub regex_city { '^city:\s*(.*)$' }
-sub regex_state { '^state:\s*(.*)$' }
-sub regex_zip { '^postal-code:\s*(.*)$' }
-sub regex_country { '^country:\s*(.*)$' }
-sub regex_admin { '^admin-c:\s*(.*)$' }
-sub regex_tech { '^tech-c:\s*(.*)$' }
-sub regex_zone { '^zone-c:\s*(.*)$' }
-sub regex_created { '^created:\s*(.*)$' }
-sub regex_updated { '^modified:\s*(.*)$' }
-sub regex_expires { '^expires:\s*(.*)$' }
-sub regex_nserver { '^nserver:\s*(\S*)\s*(.*)$' }
-sub regex_registrar { '^registrar:\s*(.*)$' }
-sub my_contacts { [ qw(Administrative Technical Zone) ] }
-sub my_data { [ qw(my_contacts regex_no_match regex_domain regex_org regex_tag regex_address regex_city regex_state regex_zip regex_country regex_admin regex_tech regex_zone regex_created regex_updated regex_expires regex_nserver regex_registrar) ] }
+sub rdebug		{ 0 }
+sub regex_no_match	{ 'The requested domain (.*) is available$' }
+sub regex_domain	{ '^Domain Name:\s*(.*)$' }
+sub regex_org_start	{ '^Domain ID:\s*(.*)$' }
+sub regex_org		{ '^Registrant Name:\s*(.*)$' }
+sub regex_tag		{ '^Domain ID:\s*(.*)$' }
+sub regex_address	{ '^Registrant Address:\s*(.*)$' }
+sub regex_city		{ '^Registrant City:\s*(.*)$' }
+sub regex_state		{ '^Registrant State/Province:\s*(.*)$' }
+sub regex_zip		{ '^Registrant Postal Code:\s*(.*)$' }
+sub regex_country	{ '^Registrant Country:\s*(.*)$' }
+sub regex_admin_start	{ '^Admin ID:\s*(.*)$' }
+sub regex_admin		{ '^Admin .*:\s*(.*)$' }
+sub regex_tech_start	{ '^Tech ID:\s*(.*)$' }
+sub regex_tech		{ '^Tech .*:\s*(.*)$' }
+sub regex_zone_start	{ '^Zone ID:\s*(.*)$' }
+sub regex_zone		{ '^Zone .*:\s*(.*)$' }
+sub regex_created	{ '^Creation Date:\s*(.*)$' }
+sub regex_updated	{ '^Last Modification Date:\s*(.*)$' }
+sub regex_expires	{ '^Expiration Date:\s*(.*)$' }
+sub regex_nserver	{ '^Name Server:\s*(\S*)$' }
+sub regex_registrar	{ '^registrar:\s*(.*)$' }
+sub my_nameservers_noips { 1 }
+sub my_contacts		{ [ qw(Administrative Technical Zone) ] }
+sub my_data 		{ [ qw(my_contacts my_nameservers_noips regex_no_match regex_domain regex_org_start regex_org regex_tag regex_address regex_city regex_state regex_zip regex_country regex_admin_start regex_tech_start regex_zone_start regex_admin regex_tech regex_zone regex_created regex_updated regex_expires regex_nserver regex_registrar) ] }
 
 sub parse_text {
 	my $self = shift;
@@ -38,37 +47,43 @@ sub parse_text {
 	return $self;
 }
 
-# replace folow_referral so that we can do --format=ripe to get
-# easily parsable output and --where=domain:fqdn to match only domains
-sub follow_referral {
-	my $self = shift;
-	$self->{'base_server'} = $self->whois_server;
-	my $sock = $self->_connect || die "unable to open connection\n";
-	my $text = $self->_send_to_sock( $sock,
-		"--format=ripe --where=domain:fqdn $self->{'domain'}\x0d\x0a" );
-	$self->{RAW_WHOIS_TEXT} = join("\n", @{ $text } );
-	$self->parse_text($text);
-}
-
 # This should probably all be in parse_text but it seemed nicer to
 # break it out
 sub parse_start {
 	my $self = shift;
 	my $text = shift;
+	my $t = shift @{$text};
+	warn "DEBUG: parse_start() running...\n" if $self->rdebug;
 
-	# the first line should contian regex_no_match or else good data
-	my $t = ${ $text }[0];
-	if (!defined $t || $t =~ /$self->{'regex_no_match'}/) {
-		$self->{'MATCH'} = 0;
-		return 0;
-	} else {
-		$self->{'MATCH'} = 1;
+	# Keep going through raw text until we find our starting point
+	warn "DEBUG: Skipping boilerplate\n" if $self->rdebug;
+	until (!defined $t || $t =~ /$self->{'regex_org_start'}/ || 
+	$t =~ /$self->{'regex_no_match'}/) {
+		warn "DEBUG: skip t = $t\n" if $self->rdebug;
+		$t = shift @{$text};
 	}
 
+	warn "DEBUG: skip t = $t\n" if $self->rdebug;
+	warn "DEBUG: Done skipping\n" if $self->rdebug;
+	$self->dump_text if $self->rdebug;
+
+	# the first line should contian regex_no_match or else good data
+	if ($t =~ /$self->{'regex_org_start'}/) {
+		warn "DEBUG: Domain matched\n" if $self->rdebug;
+		$self->{'MATCH'} = 1;
+		$self->{'TAG'} = $1;
+	} else {	
+		$self->{'MATCH'} = 0;
+		warn "DEBUG: Matched against regex_no_match\n" if $self->rdebug;
+		return 0;
+	}
+
+	warn "DEBUG: Starting parsing loop...\n" if $self->rdebug;
 	for (@{$text}) {
+		warn "DEBUG: _ = $_\n" if $self->rdebug;
+
 		/$self->{'regex_domain'}/	&& do { $self->{'DOMAIN'} = $1; next; };
 		/$self->{'regex_org'}/		&& do { $self->{'NAME'} = $1; next; };
-		/$self->{'regex_tag'}/		&& do { $self->{'TAG'} = $1; next; };
 		/$self->{'regex_address'}/	&& do {
 			push @{$self->{'ADDRESS'}}, $1; next; };
 		/$self->{'regex_city'}/		&& do {
@@ -78,17 +93,17 @@ sub parse_start {
 		/$self->{'regex_zip'}/		&& do {
 			${$self->{'ADDRESS'}}[$#{$self->{'ADDRESS'}}] .= " $1"; next; };
 		/$self->{'regex_country'}/	&& do { $self->{'COUNTRY'} = $1; next; };
-		/$self->{'regex_admin'}/	&& do {
+		/$self->{'regex_admin_start'}/	&& do {
 			${$self->{'CONTACTS'}}{uc ${$self->{'my_contacts'}}[0]}
-				= [ $self->parse_contacts($1) ];
+				= [ $self->parse_contacts($self->{'regex_admin'}, $text) ];
 			next; };
-		/$self->{'regex_tech'}/		&& do {
+		/$self->{'regex_tech_start'}/		&& do {
 			${$self->{'CONTACTS'}}{uc ${$self->{'my_contacts'}}[1]}
-				= [ $self->parse_contacts($1) ];
+				= [ $self->parse_contacts($self->{'regex_tech'}, $text) ];
 			next; };
-		/$self->{'regex_zone'}/		&& do {
+		/$self->{'regex_zone_start'}/		&& do {
 			${$self->{'CONTACTS'}}{uc ${$self->{'my_contacts'}}[2]}
-				= [ $self->parse_contacts($1) ];
+				= [ $self->parse_contacts($self->{'regex_zone'}, $text) ];
 			next; };
 		/$self->{'regex_created'}/	&& do {
 			$self->{'RECORD_CREATED'} = $1; next; };
@@ -97,36 +112,46 @@ sub parse_start {
 		/$self->{'regex_expires'}/	&& do {
 			$self->{'RECORD_EXPIRES'} = $1; next; };
 		/$self->{'regex_nserver'}/	&& do {
-			push @{$self->{'SERVERS'}}, [$1, $2]; next; };
-		/$self->{'regex_registrar'}/	&& do {
-			$self->{'registrar_tag'} .= " ($1)"; next; };
-		#print "\"$_\"\n";
+			push @{$self->{'SERVERS'}}, [$1, $self->na]; next; };
 	}
+
+	warn "DEBUG: parse_start() ending...\n" if $self->rdebug;
 }
 
 
 # this goes out and gets the contact info
+# Only doesn't work that way anymore, so this is completely different now.
+#						--jcm, 11/30/05
 sub parse_contacts {
 	my $self = shift;
+	warn "DEBUG: parse_contacts() starting...\n" if $self->rdebug;
 	my $contactid = shift;
-    warn "using cached contact object for contact id $contactid\n" if ($self->{'CONTACT_' . $contactid} && $self->rdebug); 
-    return @{ $self->{'CONTACT_' . $contactid} } if ($self->{'CONTACT_' . $contactid});
-	$self->{'base_server'} = $self->whois_server;
-	my $sock = $self->_connect || die "unable to open connection\n";
-	my $text = $self->_send_to_sock( $sock,
-		"--where=contact:handle $contactid\x0d\x0a" );
-	
-	# the first line should contian regex_no_match or else good data
-	my $t = ${ $text }[0];
-	if (!defined $t || $t =~ /no Match for/) {
-		return "";
-	}
-	my @t = ();
-	push @t, shift @{ $text } while ${ $text }[0]; # read until empty line
+	my $text = shift;
+	my ($t, @cont, $i);
 
-    $self->{'CONTACT_' . $contactid} = \@t;
-	return @t;
+	warn "DEBUG: contactid = $contactid\n" if $self->rdebug;
+	warn "DEBUG: text = $text\n" if $self->rdebug;
+
+#	foreach (@{$text}) {
+#		warn "DEBUG: _ = $_\n" if $self->rdebug;
+#		if (/$contactid/) { push @cont, $1; }
+#	}
+
+	for ($i=0; $i <= $#{$text}; $i++) {
+		if (${$text}[$i] =~ /$contactid/) {
+			push @cont, (split(/: /, ${$text}[$i+1]))[1];
+			push @cont, (split(/: /, ${$text}[$i+2]))[1];
+			push @cont, (split(/: /, ${$text}[$i+3]))[1];
+			push @cont, (split(/: /, ${$text}[$i+4]))[1].", ".(split(/: /, ${$text}[$i+5]))[1]."  ".(split(/: /, ${$text}[$i+6]))[1];
+			push @cont, (split(/: /, ${$text}[$i+7]))[1];
+			push @cont, "Phone: ".(split(/: /, ${$text}[$i+8]))[1]."  FAX: ".(split(/: /, ${$text}[$i+9]))[1];
+			push @cont, (split(/: /, ${$text}[$i+10]))[1];
+
+			last;
+		}
+	}
+
+	return @cont;
 }
 
 1;
-

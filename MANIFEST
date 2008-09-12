@@ -16,6 +16,14 @@ lib/Net/ParseWhois/Domain/Registrar/Registrars.pm
 lib/Net/ParseWhois/Domain/Registrar/CoreNic.pm
 lib/Net/ParseWhois/Domain/Registrar/Easyspace.pm
 lib/Net/ParseWhois/Domain/Registrar/INameWW.pm
+lib/Net/ParseWhois/Domain/Registrar/Enom.pm
+lib/Net/ParseWhois/Domain/Registrar/GoDaddy.pm
+lib/Net/ParseWhois/Domain/Registrar/NameJuice.pm
+lib/Net/ParseWhois/Domain/Registrar/NameScout.pm
+lib/Net/ParseWhois/Domain/Registrar/NameSecure.pm
+lib/Net/ParseWhois/Domain/Registrar/SRSPlus.pm
+lib/Net/ParseWhois/Domain/Registrar/PIR.pm
 lib/Net/ParseWhois/Domain/Registrar/Unknown.pm
 t/01-base.t
 t/whois.pl
+META.yml                                 Module meta-data (added by MakeMaker)

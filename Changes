@@ -1,5 +1,15 @@
 Revision history for Perl extension Net::ParseWhois
 
+0.7   Wed Sep 10 10:57:00 EST 2008
+	- Prepped for release (finally!)
+
+0.65  ??? 2005
+	- Fixed broken Registrar modules (mostly due to formatting changes
+	  in Whois output)
+	- Added new registrars: GoDaddy, NameJuice, NameScout, NameSecure,
+	  SRSPlus and PIR (the .org registrar!)
+	- Other stuff I can't remember since it's been a few years.
+
 0.62  Sat Apr 14 01:40:45 PDT 2001
 	- added INameWW & Easyspace module from Adam Stubb
 	- updated SEE ALSO pod section with links to mailing list & homepage
